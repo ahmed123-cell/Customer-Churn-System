@@ -47,6 +47,12 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --frozen --all-groups
+      
+      - name: Debug uv env
+        run: | 
+          uv pip list
+          which ruff || echo "ruff not on PATH"
+          uv run which ruff || echo "ruff not found via uv run"
 
       - name: Lint with ruff
         run: uv run ruff check .
