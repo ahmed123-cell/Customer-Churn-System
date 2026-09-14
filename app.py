@@ -60,6 +60,7 @@ _APP_CFG = load_app_config()
 # Model state — populated once at startup, read (never mutated) per-request.
 # ---------------------------------------------------------------------------
 
+
 class ModelState:
     session: ort.InferenceSession | None = None
     scaler = None
@@ -69,6 +70,7 @@ class ModelState:
 
 
 model_state = ModelState()
+
 
 def load_feature_names(path):
     with open(path) as f:
@@ -84,15 +86,12 @@ async def lifespan(app: FastAPI):
     model_state.model_path = _APP_CFG["model_path"]
 
     model_state.session = ort.InferenceSession(
-        model_state.model_path,
-        providers=["CPUExecutionProvider"]
+        model_state.model_path, providers=["CPUExecutionProvider"]
     )
 
     model_state.input_name = model_state.session.get_inputs()[0].name
 
-    model_state.scaler = joblib.load(
-        _APP_CFG["scaler_path"]
-    )
+    model_state.scaler = joblib.load(_APP_CFG["scaler_path"])
 
     model_state.feature_names = await asyncio.to_thread(
         load_feature_names,
@@ -113,7 +112,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Telco Customer Churn API",
     description="Predicts whether a customer is likely to churn from their "
-                 "account and service attributes.",
+    "account and service attributes.",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -192,7 +191,9 @@ class PredictionResponse(BaseModel):
     churn_prediction: Literal[0, 1] = Field(
         description="1 = predicted to churn, 0 = predicted to stay"
     )
-    churn_probability: float = Field(ge=0, le=1, description="Predicted probability of churn")
+    churn_probability: float = Field(
+        ge=0, le=1, description="Predicted probability of churn"
+    )
     model_path: str
 
 
@@ -206,6 +207,7 @@ class HealthResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Inference
 # ---------------------------------------------------------------------------
+
 
 def _run_inference(df_row: pd.DataFrame) -> tuple[int, float]:
     """Preprocess one row with the already-fitted scaler/feature layout,
@@ -250,6 +252,7 @@ def _run_inference(df_row: pd.DataFrame) -> tuple[int, float]:
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health() -> HealthResponse:

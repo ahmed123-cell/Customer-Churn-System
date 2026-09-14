@@ -61,6 +61,7 @@ SCALE_POS_WEIGHT_MODELS = {
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="module")
 def synthetic_data():
     """A small, moderately imbalanced (~20% positive) synthetic binary
@@ -103,10 +104,16 @@ def extreme_imbalance_data():
 # Registry sanity checks
 # ---------------------------------------------------------------------------
 
+
 def test_model_builders_registry_has_expected_models():
     expected = {
-        "logistic_regression", "linear_svm", "decision_tree",
-        "random_forest", "gradient_boosting", "xgboost", "lightgbm",
+        "logistic_regression",
+        "linear_svm",
+        "decision_tree",
+        "random_forest",
+        "gradient_boosting",
+        "xgboost",
+        "lightgbm",
     }
     assert set(MODEL_BUILDERS.keys()) == expected
 
@@ -126,6 +133,7 @@ def test_model_builders_registry_naming_matches_functions():
 # Interface / fitted-estimator checks (parametrized across every model)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("name, builder", MODEL_BUILDERS.items())
 def test_builder_returns_fitted_estimator_with_predict(name, builder, synthetic_data):
     X_train, X_test, y_train, y_test = synthetic_data
@@ -135,7 +143,9 @@ def test_builder_returns_fitted_estimator_with_predict(name, builder, synthetic_
     preds = model.predict(X_test)
 
     assert preds.shape == y_test.shape, f"{name} prediction shape mismatch"
-    assert set(np.unique(preds)) <= {0, 1}, f"{name} predicted non-binary labels: {np.unique(preds)}"
+    assert set(np.unique(preds)) <= {0, 1}, (
+        f"{name} predicted non-binary labels: {np.unique(preds)}"
+    )
 
 
 @pytest.mark.parametrize("name, builder", MODEL_BUILDERS.items())
@@ -159,11 +169,17 @@ def test_builder_probability_or_score_output_is_valid(name, builder, synthetic_d
         proba = model.predict_proba(X_test)
         assert proba.shape == (X_test.shape[0], 2), f"{name} predict_proba wrong shape"
         assert np.isfinite(proba).all(), f"{name} predict_proba has non-finite values"
-        assert np.allclose(proba.sum(axis=1), 1.0), f"{name} predict_proba rows don't sum to 1"
-        assert ((proba >= 0) & (proba <= 1)).all(), f"{name} predict_proba has out-of-range values"
+        assert np.allclose(proba.sum(axis=1), 1.0), (
+            f"{name} predict_proba rows don't sum to 1"
+        )
+        assert ((proba >= 0) & (proba <= 1)).all(), (
+            f"{name} predict_proba has out-of-range values"
+        )
     elif hasattr(model, "decision_function"):
         scores = model.decision_function(X_test)
-        assert np.isfinite(scores).all(), f"{name} decision_function has non-finite values"
+        assert np.isfinite(scores).all(), (
+            f"{name} decision_function has non-finite values"
+        )
     else:
         pytest.fail(f"{name} has neither predict_proba nor decision_function")
 
@@ -179,12 +195,15 @@ def test_builder_is_reproducible_with_fixed_random_state(name, builder, syntheti
 
     preds_a = model_a.predict(X_test)
     preds_b = model_b.predict(X_test)
-    assert np.array_equal(preds_a, preds_b), f"{name} is not reproducible across identical calls"
+    assert np.array_equal(preds_a, preds_b), (
+        f"{name} is not reproducible across identical calls"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Class-imbalance handling: class_weight (sklearn models)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("name, builder", CLASS_WEIGHT_MODELS.items())
 def test_class_weight_defaults_to_balanced(name, builder, synthetic_data):
@@ -217,6 +236,7 @@ def test_gradient_boosting_has_no_class_weight_param(synthetic_data):
 # ---------------------------------------------------------------------------
 # Class-imbalance handling: scale_pos_weight (XGBoost / LightGBM)
 # ---------------------------------------------------------------------------
+
 
 def test_compute_scale_pos_weight_matches_manual_ratio(synthetic_data):
     _X_train, _, y_train, _ = synthetic_data
@@ -255,6 +275,7 @@ def test_scale_pos_weight_override_is_respected(name, builder, synthetic_data):
 # Hyperparameter override checks
 # ---------------------------------------------------------------------------
 
+
 def test_random_forest_n_estimators_override(synthetic_data):
     X_train, _, y_train, _ = synthetic_data
     model = build_random_forest(X_train, y_train, n_estimators=7)
@@ -270,7 +291,9 @@ def test_decision_tree_max_depth_override(synthetic_data):
 
 def test_xgboost_hyperparameters_override(synthetic_data):
     X_train, _, y_train, _ = synthetic_data
-    model = build_xgboost(X_train, y_train, n_estimators=15, max_depth=2, learning_rate=0.3)
+    model = build_xgboost(
+        X_train, y_train, n_estimators=15, max_depth=2, learning_rate=0.3
+    )
     params = model.get_params()
     assert params["n_estimators"] == 15
     assert params["max_depth"] == 2
@@ -289,8 +312,11 @@ def test_lightgbm_hyperparameters_override(synthetic_data):
 # Robustness under extreme class imbalance
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("name, builder", MODEL_BUILDERS.items())
-def test_builder_handles_extreme_imbalance_without_crashing(name, builder, extreme_imbalance_data):
+def test_builder_handles_extreme_imbalance_without_crashing(
+    name, builder, extreme_imbalance_data
+):
     X, y = extreme_imbalance_data
     # Skip if the split has too few positive samples to be meaningful.
     if (y == 1).sum() < 2:
@@ -305,6 +331,7 @@ def test_builder_handles_extreme_imbalance_without_crashing(name, builder, extre
 # ---------------------------------------------------------------------------
 # End-to-end integration test with the real preprocessing pipeline
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.skipif(not DATA_PATH.exists(), reason="Real Telco CSV not found in data/")
 def test_end_to_end_pipeline_on_real_data():
@@ -332,4 +359,6 @@ def test_end_to_end_pipeline_on_real_data():
             else model.decision_function(X_test)
         )
         auc = roc_auc_score(y_test, scores)
-        assert auc > 0.5, f"{name} performed no better than random guessing (AUC={auc:.3f})"
+        assert auc > 0.5, (
+            f"{name} performed no better than random guessing (AUC={auc:.3f})"
+        )

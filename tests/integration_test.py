@@ -92,6 +92,7 @@ INTEGRATION_MODELS = ["logistic_regression", "lightgbm"]
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="module")
 def raw_data() -> pd.DataFrame:
     return pd.read_csv(DATA_PATH)
@@ -163,10 +164,16 @@ def api_client(trained_pipeline, monkeypatch):
     exercises app.py's actual lifespan loading, actual preprocess_data
     call, and actual ONNX Runtime inference.
     """
-    monkeypatch.setitem(app_module._APP_CFG, "model_path", trained_pipeline["onnx_path"])
-    monkeypatch.setitem(app_module._APP_CFG, "scaler_path", trained_pipeline["scaler_path"])
     monkeypatch.setitem(
-        app_module._APP_CFG, "feature_names_path", trained_pipeline["feature_names_path"]
+        app_module._APP_CFG, "model_path", trained_pipeline["onnx_path"]
+    )
+    monkeypatch.setitem(
+        app_module._APP_CFG, "scaler_path", trained_pipeline["scaler_path"]
+    )
+    monkeypatch.setitem(
+        app_module._APP_CFG,
+        "feature_names_path",
+        trained_pipeline["feature_names_path"],
     )
 
     with TestClient(app_module.app) as client:
@@ -191,6 +198,7 @@ def _row_to_customer_payload(row: pd.Series) -> dict:
 # Tests
 # ---------------------------------------------------------------------------
 
+
 @skip_if_no_data
 def test_health_reflects_real_loaded_model(api_client, trained_pipeline):
     response = api_client.get("/health")
@@ -203,7 +211,9 @@ def test_health_reflects_real_loaded_model(api_client, trained_pipeline):
 
 
 @skip_if_no_data
-def test_api_predictions_match_original_model_on_real_customers(api_client, trained_pipeline):
+def test_api_predictions_match_original_model_on_real_customers(
+    api_client, trained_pipeline
+):
     """The assertion this whole file exists for: for real, held-out
     customers, the API's answer (raw JSON in -> ONNX Runtime inference)
     must agree with the original model's answer on the same rows.
@@ -236,7 +246,9 @@ def test_api_predictions_match_original_model_on_real_customers(api_client, trai
 
 
 @skip_if_no_data
-def test_api_rejects_real_customer_with_corrupted_category(api_client, trained_pipeline):
+def test_api_rejects_real_customer_with_corrupted_category(
+    api_client, trained_pipeline
+):
     """One negative-path check against real data: take a genuine row and
     corrupt a single categorical field, confirming validation still catches
     it even when everything else about the payload is realistic.

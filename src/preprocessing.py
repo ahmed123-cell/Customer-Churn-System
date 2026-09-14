@@ -39,6 +39,7 @@ def load_data_config(path: str = "configs/data_config.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
 
+
 _CFG = load_data_config()
 
 ID_COLUMNS = _CFG["id_columns"]
@@ -61,7 +62,9 @@ def _clean_total_charges(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def _encode_binary_columns(data: pd.DataFrame, column_maps: dict[str, dict]) -> pd.DataFrame:
+def _encode_binary_columns(
+    data: pd.DataFrame, column_maps: dict[str, dict]
+) -> pd.DataFrame:
     """Map two-category Yes/No-style (and gender) columns to 0/1 in place,
     using fixed mappings so this works correctly even on a single row or a
     subset of data that doesn't contain both categories.
@@ -80,7 +83,9 @@ def _encode_binary_columns(data: pd.DataFrame, column_maps: dict[str, dict]) -> 
     return data
 
 
-def _one_hot_encode(data: pd.DataFrame, known_categories: dict[str, list[str]]) -> pd.DataFrame:
+def _one_hot_encode(
+    data: pd.DataFrame, known_categories: dict[str, list[str]]
+) -> pd.DataFrame:
     """One-hot encode multi-category columns, dropping the first level of
     each to avoid the dummy-variable trap (needed for linear models; harmless
     for tree-based models).

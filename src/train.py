@@ -43,6 +43,7 @@ def load_train_config(path: str = "configs/train_config.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
 
+
 _TRAIN_CFG = load_train_config()
 
 
@@ -128,7 +129,9 @@ def evaluate_model(model, X, y) -> dict:
     }
 
 
-def build_and_evaluate(name, builder, X_train, y_train, X_test, y_test, **params) -> dict:
+def build_and_evaluate(
+    name, builder, X_train, y_train, X_test, y_test, **params
+) -> dict:
     """Build one model (with optional hyperparameter overrides), evaluate it,
     and log the run (params, metrics, model artifact) to MLflow. Returns a
     single results row with its train/test Precision, Recall, and ROC-AUC.
@@ -230,13 +233,17 @@ def main(
     #    one shared experiment over time.
     if _TRAIN_CFG.get("mlflow_tracking_uri"):
         mlflow.set_tracking_uri(_TRAIN_CFG["mlflow_tracking_uri"])
-    experiment_name = new_experiment_name(_TRAIN_CFG.get("mlflow_experiment_prefix", "telco_churn"))
+    experiment_name = new_experiment_name(
+        _TRAIN_CFG.get("mlflow_experiment_prefix", "telco_churn")
+    )
     mlflow.set_experiment(experiment_name)
     log.info("mlflow_experiment_set", experiment_name=experiment_name)
 
     # 1. Load raw data.
     raw = pd.read_csv(data_path)
-    log.info("data_loaded", data_path=data_path, rows=raw.shape[0], columns=raw.shape[1])
+    log.info(
+        "data_loaded", data_path=data_path, rows=raw.shape[0], columns=raw.shape[1]
+    )
 
     # 2. Split BEFORE preprocessing, stratified on the target so both splits
     #    keep the same ~26.5% churn rate.
@@ -258,8 +265,12 @@ def main(
     X_test, y_test, _, _ = preprocess_data(test_df, scaler=scaler, fit_scaler=False)
     log.info("preprocessing_complete", n_features=len(feature_names))
 
-    run_params = {"data_path": data_path, "test_size": test_size, "seed": seed,
-                  "n_features": len(feature_names)}
+    run_params = {
+        "data_path": data_path,
+        "test_size": test_size,
+        "seed": seed,
+        "n_features": len(feature_names),
+    }
 
     # 4-5. Train either a single requested model (with optional hyperparameter
     #      overrides) or every model in the registry with defaults.
@@ -267,7 +278,13 @@ def main(
         with mlflow.start_run(run_name=f"{model_name}_run"):
             mlflow.log_params(run_params)
             row = build_and_evaluate(
-                model_name, MODEL_BUILDERS[model_name], X_train, y_train, X_test, y_test, **params
+                model_name,
+                MODEL_BUILDERS[model_name],
+                X_train,
+                y_train,
+                X_test,
+                y_test,
+                **params,
             )
         results = pd.DataFrame([row]).set_index("model")
     else:
@@ -276,11 +293,14 @@ def main(
             results = train_and_evaluate_all(X_train, y_train, X_test, y_test)
 
             best_name = results.sort_values("test_roc_auc", ascending=False).index[0]
-            mlflow.log_metric("best_test_roc_auc", results.loc[best_name, "test_roc_auc"])
+            mlflow.log_metric(
+                "best_test_roc_auc", results.loc[best_name, "test_roc_auc"]
+            )
             mlflow.set_tag("best_model", best_name)
 
             results_path = "artifacts/model_comparison.csv"
             import os
+
             os.makedirs("artifacts", exist_ok=True)
             results.to_csv(results_path)
             mlflow.log_artifact(results_path)
@@ -307,26 +327,51 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate churn models.")
-    parser.add_argument("--data", default=_TRAIN_CFG["data_path"],
-                         help="Path to the raw Telco Customer Churn CSV file.")
-    parser.add_argument("--test-size", type=float, default=_TRAIN_CFG["test_size"],
-                         help="Fraction of data held out for testing.")
-    parser.add_argument("--seed", type=int, default=_TRAIN_CFG["seed"],
-                         help="Random seed for the train/test split.")
-    parser.add_argument("--model", choices=list(MODEL_BUILDERS.keys()), default=None,
-                         help="Train & evaluate only this model. Omit to run every "
-                              "model in models_builder.MODEL_BUILDERS.")
-    parser.add_argument("--params", nargs="*", default=[], metavar="KEY=VALUE",
-                         help="Hyperparameters passed straight to the chosen model's "
-                              "builder function, e.g. --params n_estimators=500 max_depth=6. "
-                              "Only used together with --model.")
-    parser.add_argument("--log-level", default="INFO",
-                         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-                         help="Logging verbosity for structlog/logging output.")
+    parser.add_argument(
+        "--data",
+        default=_TRAIN_CFG["data_path"],
+        help="Path to the raw Telco Customer Churn CSV file.",
+    )
+    parser.add_argument(
+        "--test-size",
+        type=float,
+        default=_TRAIN_CFG["test_size"],
+        help="Fraction of data held out for testing.",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=_TRAIN_CFG["seed"],
+        help="Random seed for the train/test split.",
+    )
+    parser.add_argument(
+        "--model",
+        choices=list(MODEL_BUILDERS.keys()),
+        default=None,
+        help="Train & evaluate only this model. Omit to run every "
+        "model in models_builder.MODEL_BUILDERS.",
+    )
+    parser.add_argument(
+        "--params",
+        nargs="*",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Hyperparameters passed straight to the chosen model's "
+        "builder function, e.g. --params n_estimators=500 max_depth=6. "
+        "Only used together with --model.",
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Logging verbosity for structlog/logging output.",
+    )
     args = parser.parse_args()
 
     if args.params and args.model is None:
-        parser.error("--params requires --model to be set (which model should they apply to?).")
+        parser.error(
+            "--params requires --model to be set (which model should they apply to?)."
+        )
 
     configure_logging(args.log_level)
     warnings.filterwarnings("ignore")  # keep console output focused on results

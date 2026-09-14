@@ -115,9 +115,16 @@ def client(monkeypatch):
     """
     fake_session = FakeSession()
 
-    monkeypatch.setattr(app_module.ort, "InferenceSession", lambda *a, **kw: fake_session)
+    monkeypatch.setattr(
+        app_module.ort, "InferenceSession", lambda *a, **kw: fake_session
+    )
     monkeypatch.setattr(app_module.joblib, "load", lambda path: object())
-    monkeypatch.setattr(app_module, "open", mock_open(read_data=json.dumps(FAKE_FEATURE_NAMES)), raising=False)
+    monkeypatch.setattr(
+        app_module,
+        "open",
+        mock_open(read_data=json.dumps(FAKE_FEATURE_NAMES)),
+        raising=False,
+    )
     monkeypatch.setattr(app_module, "preprocess_data", _fake_preprocess_data)
 
     with TestClient(app_module.app) as test_client:
@@ -127,6 +134,7 @@ def client(monkeypatch):
 # ---------------------------------------------------------------------------
 # /health
 # ---------------------------------------------------------------------------
+
 
 def test_health_reports_loaded_model(client):
     response = client.get("/health")
@@ -152,6 +160,7 @@ def test_health_reports_unavailable_when_model_missing(client):
 # ---------------------------------------------------------------------------
 # /predict — happy path and failure paths
 # ---------------------------------------------------------------------------
+
 
 def test_predict_returns_prediction_for_valid_customer(client):
     response = client.post("/predict", json=VALID_CUSTOMER)
@@ -185,6 +194,7 @@ def test_predict_returns_500_on_feature_layout_mismatch(client, monkeypatch):
 # ---------------------------------------------------------------------------
 # /predict — input validation (422s)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "field, bad_value",
@@ -243,6 +253,7 @@ def test_predict_rejects_wrong_type(client):
 # ---------------------------------------------------------------------------
 # Auto-generated docs
 # ---------------------------------------------------------------------------
+
 
 def test_openapi_schema_lists_both_routes(client):
     response = client.get("/openapi.json")

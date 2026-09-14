@@ -26,11 +26,27 @@ import pytest
 DATA_PATH = Path("data\\Telco-Customer-Churn.csv")
 
 EXPECTED_COLUMNS = [
-    "customerID", "gender", "SeniorCitizen", "Partner", "Dependents", "tenure",
-    "PhoneService", "MultipleLines", "InternetService", "OnlineSecurity",
-    "OnlineBackup", "DeviceProtection", "TechSupport", "StreamingTV",
-    "StreamingMovies", "Contract", "PaperlessBilling", "PaymentMethod",
-    "MonthlyCharges", "TotalCharges", "Churn",
+    "customerID",
+    "gender",
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "tenure",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod",
+    "MonthlyCharges",
+    "TotalCharges",
+    "Churn",
 ]
 
 # Expected category domains for each categorical column — used to catch
@@ -51,8 +67,10 @@ EXPECTED_CATEGORIES = {
     "Contract": {"Month-to-month", "One year", "Two year"},
     "PaperlessBilling": {"Yes", "No"},
     "PaymentMethod": {
-        "Electronic check", "Mailed check",
-        "Bank transfer (automatic)", "Credit card (automatic)",
+        "Electronic check",
+        "Mailed check",
+        "Bank transfer (automatic)",
+        "Credit card (automatic)",
     },
     "Churn": {"Yes", "No"},
 }
@@ -68,6 +86,7 @@ def raw_df() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Structural checks: file, shape, columns, duplicates
 # ---------------------------------------------------------------------------
+
 
 def test_data_file_exists():
     assert DATA_PATH.exists(), f"Expected data file at {DATA_PATH}"
@@ -103,12 +122,15 @@ def test_customer_id_format(raw_df):
     a hyphen, 5 uppercase letters), e.g. '7590-VHVEG'."""
     pattern = r"^\d{4}-[A-Z]{5}$"
     invalid = raw_df.loc[~raw_df["customerID"].str.match(pattern), "customerID"]
-    assert invalid.empty, f"Found {len(invalid)} customerID(s) with an unexpected format: {invalid.tolist()[:5]}"
+    assert invalid.empty, (
+        f"Found {len(invalid)} customerID(s) with an unexpected format: {invalid.tolist()[:5]}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Missing-value checks
 # ---------------------------------------------------------------------------
+
 
 def test_no_missing_values_in_key_columns(raw_df):
     """Every column except TotalCharges (which has known blank strings for
@@ -124,6 +146,7 @@ def test_no_missing_values_in_key_columns(raw_df):
 # ---------------------------------------------------------------------------
 # Categorical domain checks
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("column, expected_values", EXPECTED_CATEGORIES.items())
 def test_categorical_values_within_expected_domain(raw_df, column, expected_values):
@@ -145,16 +168,23 @@ def test_senior_citizen_is_binary_flag(raw_df):
 # Numeric range / sanity checks
 # ---------------------------------------------------------------------------
 
+
 def test_tenure_is_non_negative_and_reasonable(raw_df):
     assert (raw_df["tenure"] >= 0).all(), "Found negative tenure value(s)"
     # 10 years is a generous upper bound for a telecom subscription tenure
     # in months; anything beyond that likely signals a data issue.
-    assert (raw_df["tenure"] <= 120).all(), "Found implausibly large tenure value(s) (> 120 months)"
+    assert (raw_df["tenure"] <= 120).all(), (
+        "Found implausibly large tenure value(s) (> 120 months)"
+    )
 
 
 def test_monthly_charges_is_positive_and_reasonable(raw_df):
-    assert (raw_df["MonthlyCharges"] > 0).all(), "Found non-positive MonthlyCharges value(s)"
-    assert (raw_df["MonthlyCharges"] <= 500).all(), "Found implausibly large MonthlyCharges value(s)"
+    assert (raw_df["MonthlyCharges"] > 0).all(), (
+        "Found non-positive MonthlyCharges value(s)"
+    )
+    assert (raw_df["MonthlyCharges"] <= 500).all(), (
+        "Found implausibly large MonthlyCharges value(s)"
+    )
 
 
 def test_total_charges_parses_to_numeric_except_known_blanks(raw_df):
@@ -208,6 +238,7 @@ def test_total_charges_roughly_consistent_with_tenure_and_monthly_charges(raw_df
 # Target variable sanity checks
 # ---------------------------------------------------------------------------
 
+
 def test_churn_is_binary_yes_no(raw_df):
     assert set(raw_df["Churn"].unique()) == {"Yes", "No"}, (
         f"Churn should only contain 'Yes'/'No', found: {raw_df['Churn'].unique()}"
@@ -220,12 +251,15 @@ def test_churn_rate_within_plausible_bounds(raw_df):
     class, or a coin-flip 50/50 split that doesn't match the known problem.
     """
     churn_rate = (raw_df["Churn"] == "Yes").mean()
-    assert 0.05 < churn_rate < 0.60, f"Churn rate {churn_rate:.2%} is outside plausible bounds"
+    assert 0.05 < churn_rate < 0.60, (
+        f"Churn rate {churn_rate:.2%} is outside plausible bounds"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Cross-field consistency checks
 # ---------------------------------------------------------------------------
+
 
 def test_no_phone_service_implies_no_multiple_lines(raw_df):
     """A customer with no phone service can't have 'Yes'/'No' for
@@ -244,8 +278,12 @@ def test_no_internet_service_implies_no_internet_addons(raw_df):
     any internet add-on — it must be the sentinel 'No internet service'.
     """
     internet_addons = [
-        "OnlineSecurity", "OnlineBackup", "DeviceProtection",
-        "TechSupport", "StreamingTV", "StreamingMovies",
+        "OnlineSecurity",
+        "OnlineBackup",
+        "DeviceProtection",
+        "TechSupport",
+        "StreamingTV",
+        "StreamingMovies",
     ]
     no_internet = raw_df["InternetService"] == "No"
     for col in internet_addons:

@@ -235,28 +235,49 @@ def _build_arg_parser():
 
     parser = argparse.ArgumentParser(
         description="Train a model from models_builder.py on the given data "
-                     "and export it to ONNX."
+        "and export it to ONNX."
     )
-    parser.add_argument("--data", required=True,
-                         help="Path to the raw Telco Customer Churn CSV file.")
-    parser.add_argument("--model", required=True, choices=list(MODEL_BUILDERS.keys()),
-                         help="Which model builder to train and export.")
-    parser.add_argument("--params", nargs="*", default=[], metavar="KEY=VALUE",
-                         help="Hyperparameters passed straight to the chosen "
-                              "model's builder function, e.g. "
-                              "--params n_estimators=500 max_depth=6.")
-    parser.add_argument("--output", default=None,
-                         help="Destination .onnx path. Defaults to "
-                              "artifacts/<model>.onnx")
-    parser.add_argument("--zipmap", action="store_true",
-                         help="Keep scikit-learn's default dict-style "
-                              "probability output instead of a plain tensor. "
-                              "Ignored for XGBoost/LightGBM.")
-    parser.add_argument("--no-verify", action="store_true",
-                         help="Skip the post-export ONNX Runtime sanity check.")
-    parser.add_argument("--log-level", default="INFO",
-                         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-                         help="Logging verbosity for structlog/logging output.")
+    parser.add_argument(
+        "--data", required=True, help="Path to the raw Telco Customer Churn CSV file."
+    )
+    parser.add_argument(
+        "--model",
+        required=True,
+        choices=list(MODEL_BUILDERS.keys()),
+        help="Which model builder to train and export.",
+    )
+    parser.add_argument(
+        "--params",
+        nargs="*",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Hyperparameters passed straight to the chosen "
+        "model's builder function, e.g. "
+        "--params n_estimators=500 max_depth=6.",
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Destination .onnx path. Defaults to artifacts/<model>.onnx",
+    )
+    parser.add_argument(
+        "--zipmap",
+        action="store_true",
+        help="Keep scikit-learn's default dict-style "
+        "probability output instead of a plain tensor. "
+        "Ignored for XGBoost/LightGBM.",
+    )
+    parser.add_argument(
+        "--no-verify",
+        action="store_true",
+        help="Skip the post-export ONNX Runtime sanity check.",
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Logging verbosity for structlog/logging output.",
+    )
     return parser
 
 
@@ -288,7 +309,9 @@ def _parse_params(param_list) -> dict:
     params = {}
     for item in param_list or []:
         if "=" not in item:
-            raise ValueError(f"Invalid --params entry '{item}', expected format key=value")
+            raise ValueError(
+                f"Invalid --params entry '{item}', expected format key=value"
+            )
         key, value = item.split("=", 1)
         params[key] = _parse_param_value(value)
     return params
@@ -308,7 +331,9 @@ def main():
     params = _parse_params(args.params)
 
     raw = pd.read_csv(args.data)
-    log.info("data_loaded", data_path=args.data, rows=raw.shape[0], columns=raw.shape[1])
+    log.info(
+        "data_loaded", data_path=args.data, rows=raw.shape[0], columns=raw.shape[1]
+    )
 
     X, y, scaler, feature_names = preprocess_data(raw)
     log.info("preprocessing_complete", n_features=len(feature_names))

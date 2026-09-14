@@ -47,7 +47,9 @@ def load_model_config(path: str = "configs/model_config.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
 
+
 _MODEL_CFG = load_model_config()
+
 
 def _defaults(name: str) -> dict:
     return _MODEL_CFG[name]["params"]
@@ -58,6 +60,7 @@ class _Unset:
     explicitly passed None' (None is itself a valid value for params like
     `max_depth` and `scale_pos_weight`, so it can't double as the sentinel).
     """
+
     def __repr__(self) -> str:
         return "<unset>"
 
@@ -104,8 +107,10 @@ def _compute_scale_pos_weight(y_train) -> float:
 # Linear models
 # ---------------------------------------------------------------------------
 
+
 def build_logistic_regression(
-    X_train, y_train,
+    X_train,
+    y_train,
     C: float | _Unset = _UNSET,
     solver: str | _Unset = _UNSET,
     max_iter: int | _Unset = _UNSET,
@@ -151,7 +156,8 @@ def build_logistic_regression(
 
 
 def build_linear_svm(
-    X_train, y_train,
+    X_train,
+    y_train,
     C: float | _Unset = _UNSET,
     class_weight: str | dict | None | _Unset = _UNSET,
     max_iter: int | _Unset = _UNSET,
@@ -195,8 +201,10 @@ def build_linear_svm(
 # Tree-based models
 # ---------------------------------------------------------------------------
 
+
 def build_decision_tree(
-    X_train, y_train,
+    X_train,
+    y_train,
     max_depth: int | None | _Unset = _UNSET,
     min_samples_leaf: int | _Unset = _UNSET,
     class_weight: str | dict | None | _Unset = _UNSET,
@@ -237,7 +245,8 @@ def build_decision_tree(
 
 
 def build_random_forest(
-    X_train, y_train,
+    X_train,
+    y_train,
     n_estimators: int | _Unset = _UNSET,
     max_depth: int | None | _Unset = _UNSET,
     min_samples_leaf: int | _Unset = _UNSET,
@@ -287,7 +296,8 @@ def build_random_forest(
 
 
 def build_gradient_boosting(
-    X_train, y_train,
+    X_train,
+    y_train,
     n_estimators: int | _Unset = _UNSET,
     learning_rate: float | _Unset = _UNSET,
     max_depth: int | _Unset = _UNSET,
@@ -344,8 +354,10 @@ def build_gradient_boosting(
 # Boosted tree models (external libraries)
 # ---------------------------------------------------------------------------
 
+
 def build_xgboost(
-    X_train, y_train,
+    X_train,
+    y_train,
     n_estimators: int | _Unset = _UNSET,
     learning_rate: float | _Unset = _UNSET,
     max_depth: int | _Unset = _UNSET,
@@ -416,7 +428,8 @@ def build_xgboost(
 
 
 def build_lightgbm(
-    X_train, y_train,
+    X_train,
+    y_train,
     n_estimators: int | _Unset = _UNSET,
     learning_rate: float | _Unset = _UNSET,
     max_depth: int | _Unset = _UNSET,
@@ -499,12 +512,16 @@ def build_lightgbm(
 # Maps a readable model name to its builder function — handy for looping
 # over every model in a training/evaluation script without importing each
 # function by name individually.
-MODEL_BUILDERS = {name: fn for name, fn in {
-    "logistic_regression": build_logistic_regression,
-    "linear_svm": build_linear_svm,
-    "decision_tree": build_decision_tree,
-    "random_forest": build_random_forest,
-    "gradient_boosting": build_gradient_boosting,
-    "xgboost": build_xgboost,
-    "lightgbm": build_lightgbm,
-}.items() if _MODEL_CFG[name]["enabled"]}
+MODEL_BUILDERS = {
+    name: fn
+    for name, fn in {
+        "logistic_regression": build_logistic_regression,
+        "linear_svm": build_linear_svm,
+        "decision_tree": build_decision_tree,
+        "random_forest": build_random_forest,
+        "gradient_boosting": build_gradient_boosting,
+        "xgboost": build_xgboost,
+        "lightgbm": build_lightgbm,
+    }.items()
+    if _MODEL_CFG[name]["enabled"]
+}

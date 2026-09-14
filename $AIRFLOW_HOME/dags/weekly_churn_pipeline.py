@@ -51,7 +51,9 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
-PROJECT_DIR = Variable.get("churn_project_dir", default_var="/opt/airflow/projects/churn")
+PROJECT_DIR = Variable.get(
+    "churn_project_dir", default_var="/opt/airflow/projects/churn"
+)
 DOCKER_IMAGE = Variable.get("churn_docker_image", default_var="churn-api:latest")
 API_CONTAINER = Variable.get("churn_api_container", default_var="churn-api")
 
@@ -99,22 +101,27 @@ def _select_best_model() -> str:
     pushed to XCom (key='return_value'), so downstream tasks can pull it
     via Jinja templating.
     """
-    results = pd.read_csv(f"{PROJECT_DIR}/artifacts/model_comparison.csv", index_col="model")
+    results = pd.read_csv(
+        f"{PROJECT_DIR}/artifacts/model_comparison.csv", index_col="model"
+    )
     best_model = results["test_roc_auc"].idxmax()
-    print(f"Best model this run: '{best_model}' (test_roc_auc={results.loc[best_model, 'test_roc_auc']:.3f})")
+    print(
+        f"Best model this run: '{best_model}' (test_roc_auc={results.loc[best_model, 'test_roc_auc']:.3f})"
+    )
     return best_model
 
 
-with DAG(
-    dag_id="weekly_churn_pipeline",
-    description="Weekly retrain + export + redeploy of the Telco churn model",
-    default_args=default_args,
-    schedule="@weekly",  # every Sunday at midnight; use a cron string (e.g. "0 3 * * 1" for Monday 3am) to customize
-    start_date=datetime(2026, 1, 1, tzinfo=UTC),
-    catchup=False,
-    tags=["churn", "ml-pipeline"],
-) as dag:
-
+with (
+    DAG(
+        dag_id="weekly_churn_pipeline",
+        description="Weekly retrain + export + redeploy of the Telco churn model",
+        default_args=default_args,
+        schedule="@weekly",  # every Sunday at midnight; use a cron string (e.g. "0 3 * * 1" for Monday 3am) to customize
+        start_date=datetime(2026, 1, 1, tzinfo=UTC),
+        catchup=False,
+        tags=["churn", "ml-pipeline"],
+    ) as dag
+):
     pull_data = BashOperator(
         task_id="pull_data",
         bash_command=f"cd {PROJECT_DIR} && dvc pull",
@@ -155,7 +162,7 @@ with DAG(
             "dvc add artifacts/*.onnx artifacts/scaler.joblib artifacts/feature_names.json && "
             "dvc push && "
             "git add artifacts/*.dvc && "
-            "git commit -m \"Weekly retrain: $(date +%Y-%m-%d)\" && "
+            'git commit -m "Weekly retrain: $(date +%Y-%m-%d)" && '
             "git push"
         ),
     )
