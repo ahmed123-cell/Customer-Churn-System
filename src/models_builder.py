@@ -53,6 +53,36 @@ def _defaults(name: str) -> dict:
     return _MODEL_CFG[name]["params"]
 
 
+class _Unset:
+    """Sentinel distinguishing 'caller didn't pass this' from 'caller
+    explicitly passed None' (None is itself a valid value for params like
+    `max_depth` and `scale_pos_weight`, so it can't double as the sentinel).
+    """
+    def __repr__(self) -> str:
+        return "<unset>"
+
+
+_UNSET = _Unset()
+
+
+def _resolve(model_name: str, param: str, value):
+    """Return `value` unless it's `_UNSET`, in which case fall back to the
+    config-file default for `param` under `model_name`.
+
+    Hyperparameter defaults are looked up here, inside the function body,
+    rather than as default-argument expressions (e.g.
+    `param=_defaults(...)[...]`) — default values are evaluated once at
+    *module import time*, before `configs/model_config.yaml` is guaranteed
+    to reflect what the caller wants, and linters (e.g. ruff's B008) flag
+    function calls in argument defaults for the same reason. Resolving
+    lazily on each call also means editing the YAML always takes effect
+    without needing to reload/reimport this module.
+    """
+    if value is not _UNSET:
+        return value
+    return _defaults(model_name)[param]
+
+
 def _compute_scale_pos_weight(y_train) -> float:
     """Compute the negative/positive class ratio from the training labels,
     for use as `scale_pos_weight` in XGBoost/LightGBM. This up-weights the
@@ -76,11 +106,11 @@ def _compute_scale_pos_weight(y_train) -> float:
 
 def build_logistic_regression(
     X_train, y_train,
-    C: float = _defaults("logistic_regression")["C"],
-    solver: str = _defaults("logistic_regression")["solver"],
-    max_iter: int = _defaults("logistic_regression")["max_iter"],
-    class_weight: str | dict | None = _defaults("logistic_regression")["class_weight"],
-    random_state: int = _defaults("logistic_regression")["random_state"],
+    C: float | _Unset = _UNSET,
+    solver: str | _Unset = _UNSET,
+    max_iter: int | _Unset = _UNSET,
+    class_weight: str | dict | None | _Unset = _UNSET,
+    random_state: int | _Unset = _UNSET,
 ) -> LogisticRegression:
     """Build and fit a Logistic Regression classifier.
 
@@ -102,6 +132,13 @@ def build_logistic_regression(
     random_state : int, default 42
         Seed for reproducibility.
     """
+    name = "logistic_regression"
+    C = _resolve(name, "C", C)
+    solver = _resolve(name, "solver", solver)
+    max_iter = _resolve(name, "max_iter", max_iter)
+    class_weight = _resolve(name, "class_weight", class_weight)
+    random_state = _resolve(name, "random_state", random_state)
+
     model = LogisticRegression(
         C=C,
         solver=solver,
@@ -115,10 +152,10 @@ def build_logistic_regression(
 
 def build_linear_svm(
     X_train, y_train,
-    C: float = _defaults("linear_svm")["C"],
-    class_weight: str | dict | None = _defaults("linear_svm")["class_weight"],
-    max_iter: int =  _defaults("linear_svm")["max_iter"],
-    random_state: int = _defaults("linear_svm")["random_state"],
+    C: float | _Unset = _UNSET,
+    class_weight: str | dict | None | _Unset = _UNSET,
+    max_iter: int | _Unset = _UNSET,
+    random_state: int | _Unset = _UNSET,
 ) -> LinearSVC:
     """Build and fit a Linear Support Vector Classifier.
 
@@ -138,6 +175,12 @@ def build_linear_svm(
     random_state : int, default 42
         Seed for reproducibility.
     """
+    name = "linear_svm"
+    C = _resolve(name, "C", C)
+    class_weight = _resolve(name, "class_weight", class_weight)
+    max_iter = _resolve(name, "max_iter", max_iter)
+    random_state = _resolve(name, "random_state", random_state)
+
     model = LinearSVC(
         C=C,
         class_weight=class_weight,
@@ -154,10 +197,10 @@ def build_linear_svm(
 
 def build_decision_tree(
     X_train, y_train,
-    max_depth: int | None = _defaults("decision_tree")["max_depth"],
-    min_samples_leaf: int = _defaults("decision_tree")["min_samples_leaf"],
-    class_weight: str | dict | None = _defaults("decision_tree")["class_weight"],
-    random_state: int = _defaults("decision_tree")["random_state"],
+    max_depth: int | None | _Unset = _UNSET,
+    min_samples_leaf: int | _Unset = _UNSET,
+    class_weight: str | dict | None | _Unset = _UNSET,
+    random_state: int | _Unset = _UNSET,
 ) -> DecisionTreeClassifier:
     """Build and fit a single Decision Tree classifier.
 
@@ -177,6 +220,12 @@ def build_decision_tree(
     random_state : int, default 42
         Seed for reproducibility.
     """
+    name = "decision_tree"
+    max_depth = _resolve(name, "max_depth", max_depth)
+    min_samples_leaf = _resolve(name, "min_samples_leaf", min_samples_leaf)
+    class_weight = _resolve(name, "class_weight", class_weight)
+    random_state = _resolve(name, "random_state", random_state)
+
     model = DecisionTreeClassifier(
         max_depth=max_depth,
         min_samples_leaf=min_samples_leaf,
@@ -189,12 +238,12 @@ def build_decision_tree(
 
 def build_random_forest(
     X_train, y_train,
-    n_estimators: int = _defaults("random_forest")["n_estimators"],
-    max_depth: int | None =  _defaults("random_forest")["max_depth"],
-    min_samples_leaf: int =  _defaults("random_forest")["min_samples_leaf"],
-    class_weight: str | dict | None =  _defaults("random_forest")["class_weight"],
-    n_jobs: int =  _defaults("random_forest")["n_jobs"],
-    random_state: int =  _defaults("random_forest")["random_state"],
+    n_estimators: int | _Unset = _UNSET,
+    max_depth: int | None | _Unset = _UNSET,
+    min_samples_leaf: int | _Unset = _UNSET,
+    class_weight: str | dict | None | _Unset = _UNSET,
+    n_jobs: int | _Unset = _UNSET,
+    random_state: int | _Unset = _UNSET,
 ) -> RandomForestClassifier:
     """Build and fit a Random Forest classifier.
 
@@ -217,6 +266,14 @@ def build_random_forest(
     random_state : int, default 42
         Seed for reproducibility.
     """
+    name = "random_forest"
+    n_estimators = _resolve(name, "n_estimators", n_estimators)
+    max_depth = _resolve(name, "max_depth", max_depth)
+    min_samples_leaf = _resolve(name, "min_samples_leaf", min_samples_leaf)
+    class_weight = _resolve(name, "class_weight", class_weight)
+    n_jobs = _resolve(name, "n_jobs", n_jobs)
+    random_state = _resolve(name, "random_state", random_state)
+
     model = RandomForestClassifier(
         n_estimators=n_estimators,
         max_depth=max_depth,
@@ -231,11 +288,11 @@ def build_random_forest(
 
 def build_gradient_boosting(
     X_train, y_train,
-    n_estimators: int = _defaults("gradient_boosting")["n_estimators"],
-    learning_rate: float = _defaults("gradient_boosting")["learning_rate"],
-    max_depth: int = _defaults("gradient_boosting")["max_depth"],
-    subsample: float = _defaults("gradient_boosting")["subsample"],
-    random_state: int = _defaults("gradient_boosting")["random_state"],
+    n_estimators: int | _Unset = _UNSET,
+    learning_rate: float | _Unset = _UNSET,
+    max_depth: int | _Unset = _UNSET,
+    subsample: float | _Unset = _UNSET,
+    random_state: int | _Unset = _UNSET,
 ) -> GradientBoostingClassifier:
     """Build and fit a Gradient Boosting classifier.
 
@@ -265,6 +322,13 @@ def build_gradient_boosting(
     random_state : int, default 42
         Seed for reproducibility.
     """
+    name = "gradient_boosting"
+    n_estimators = _resolve(name, "n_estimators", n_estimators)
+    learning_rate = _resolve(name, "learning_rate", learning_rate)
+    max_depth = _resolve(name, "max_depth", max_depth)
+    subsample = _resolve(name, "subsample", subsample)
+    random_state = _resolve(name, "random_state", random_state)
+
     model = GradientBoostingClassifier(
         n_estimators=n_estimators,
         learning_rate=learning_rate,
@@ -282,14 +346,14 @@ def build_gradient_boosting(
 
 def build_xgboost(
     X_train, y_train,
-    n_estimators: int = _defaults("xgboost")["n_estimators"],
-    learning_rate: float = _defaults("xgboost")["learning_rate"],
-    max_depth: int = _defaults("xgboost")["max_depth"],
-    subsample: float = _defaults("xgboost")["subsample"],
-    colsample_bytree: float = _defaults("xgboost")["colsample_bytree"],
-    scale_pos_weight: float | None = _defaults("xgboost")["scale_pos_weight"],
-    random_state: int = _defaults("xgboost")["random_state"],
-    n_jobs: int = _defaults("xgboost")["n_jobs"],
+    n_estimators: int | _Unset = _UNSET,
+    learning_rate: float | _Unset = _UNSET,
+    max_depth: int | _Unset = _UNSET,
+    subsample: float | _Unset = _UNSET,
+    colsample_bytree: float | _Unset = _UNSET,
+    scale_pos_weight: float | None | _Unset = _UNSET,
+    random_state: int | _Unset = _UNSET,
+    n_jobs: int | _Unset = _UNSET,
 ) -> XGBClassifier:
     """Build and fit an XGBoost classifier.
 
@@ -323,6 +387,16 @@ def build_xgboost(
     n_jobs : int, default -1
         Number of parallel threads (-1 uses all available CPU cores).
     """
+    name = "xgboost"
+    n_estimators = _resolve(name, "n_estimators", n_estimators)
+    learning_rate = _resolve(name, "learning_rate", learning_rate)
+    max_depth = _resolve(name, "max_depth", max_depth)
+    subsample = _resolve(name, "subsample", subsample)
+    colsample_bytree = _resolve(name, "colsample_bytree", colsample_bytree)
+    scale_pos_weight = _resolve(name, "scale_pos_weight", scale_pos_weight)
+    random_state = _resolve(name, "random_state", random_state)
+    n_jobs = _resolve(name, "n_jobs", n_jobs)
+
     if scale_pos_weight is None:
         scale_pos_weight = _compute_scale_pos_weight(y_train)
 
@@ -343,15 +417,15 @@ def build_xgboost(
 
 def build_lightgbm(
     X_train, y_train,
-    n_estimators: int = _defaults("lightgbm")["n_estimators"],
-    learning_rate: float = _defaults("lightgbm")["learning_rate"],
-    max_depth: int = _defaults("lightgbm")["max_depth"],
-    num_leaves: int = _defaults("lightgbm")["num_leaves"],
-    subsample: float = _defaults("lightgbm")["subsample"],
-    colsample_bytree: float = _defaults("lightgbm")["colsample_bytree"],
-    scale_pos_weight: float | None = _defaults("lightgbm")["scale_pos_weight"],
-    random_state: int = _defaults("lightgbm")["random_state"],
-    n_jobs: int = _defaults("lightgbm")["n_jobs"],
+    n_estimators: int | _Unset = _UNSET,
+    learning_rate: float | _Unset = _UNSET,
+    max_depth: int | _Unset = _UNSET,
+    num_leaves: int | _Unset = _UNSET,
+    subsample: float | _Unset = _UNSET,
+    colsample_bytree: float | _Unset = _UNSET,
+    scale_pos_weight: float | None | _Unset = _UNSET,
+    random_state: int | _Unset = _UNSET,
+    n_jobs: int | _Unset = _UNSET,
 ) -> LGBMClassifier:
     """Build and fit a LightGBM classifier.
 
@@ -388,6 +462,17 @@ def build_lightgbm(
     n_jobs : int, default -1
         Number of parallel threads (-1 uses all available CPU cores).
     """
+    name = "lightgbm"
+    n_estimators = _resolve(name, "n_estimators", n_estimators)
+    learning_rate = _resolve(name, "learning_rate", learning_rate)
+    max_depth = _resolve(name, "max_depth", max_depth)
+    num_leaves = _resolve(name, "num_leaves", num_leaves)
+    subsample = _resolve(name, "subsample", subsample)
+    colsample_bytree = _resolve(name, "colsample_bytree", colsample_bytree)
+    scale_pos_weight = _resolve(name, "scale_pos_weight", scale_pos_weight)
+    random_state = _resolve(name, "random_state", random_state)
+    n_jobs = _resolve(name, "n_jobs", n_jobs)
+
     if scale_pos_weight is None:
         scale_pos_weight = _compute_scale_pos_weight(y_train)
 

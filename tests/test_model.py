@@ -140,7 +140,7 @@ def test_builder_returns_fitted_estimator_with_predict(name, builder, synthetic_
 
 @pytest.mark.parametrize("name, builder", MODEL_BUILDERS.items())
 def test_builder_predictions_are_not_nan(name, builder, synthetic_data):
-    X_train, X_test, y_train, y_test = synthetic_data
+    X_train, X_test, y_train, _y_test = synthetic_data
     model = builder(X_train, y_train)
     preds = model.predict(X_test)
     assert not np.isnan(preds).any(), f"{name} produced NaN prediction(s)"
@@ -152,7 +152,7 @@ def test_builder_probability_or_score_output_is_valid(name, builder, synthetic_d
     in [0, 1], rows summing to 1) or decision_function (finite scores) —
     both are needed downstream for ROC-AUC in train.py.
     """
-    X_train, X_test, y_train, y_test = synthetic_data
+    X_train, X_test, y_train, _y_test = synthetic_data
     model = builder(X_train, y_train)
 
     if hasattr(model, "predict_proba"):
@@ -173,7 +173,7 @@ def test_builder_is_reproducible_with_fixed_random_state(name, builder, syntheti
     """Calling the same builder twice on the same data (with the default
     fixed random_state) should produce identical predictions.
     """
-    X_train, X_test, y_train, y_test = synthetic_data
+    X_train, X_test, y_train, _y_test = synthetic_data
     model_a = builder(X_train, y_train)
     model_b = builder(X_train, y_train)
 
@@ -219,7 +219,7 @@ def test_gradient_boosting_has_no_class_weight_param(synthetic_data):
 # ---------------------------------------------------------------------------
 
 def test_compute_scale_pos_weight_matches_manual_ratio(synthetic_data):
-    X_train, _, y_train, _ = synthetic_data
+    _X_train, _, y_train, _ = synthetic_data
     expected = (y_train == 0).sum() / (y_train == 1).sum()
     assert _compute_scale_pos_weight(y_train) == pytest.approx(expected)
 

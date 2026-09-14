@@ -70,25 +70,39 @@ class ModelState:
 
 model_state = ModelState()
 
+def load_feature_names(path):
+    with open(path) as f:
+        return json.load(f)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load the ONNX model, scaler, and feature ordering exactly once when
     the process starts, and hold them in `model_state` for its whole
-    lifetime. Runs before the app accepts any traffic, and again only if
-    the process itself restarts — never on a per-request basis.
+    lifetime.
     """
     model_state.model_path = _APP_CFG["model_path"]
-    model_state.session = ort.InferenceSession(
-        model_state.model_path, providers=["CPUExecutionProvider"]
-    )
-    model_state.input_name = model_state.session.get_inputs()[0].name
-    model_state.scaler = joblib.load(_APP_CFG["scaler_path"])
-    with open(_APP_CFG["feature_names_path"]) as f:
-        model_state.feature_names = json.load(f)
 
-    print(f"Loaded model '{model_state.model_path}' "
-          f"({len(model_state.feature_names)} features)")
+    model_state.session = ort.InferenceSession(
+        model_state.model_path,
+        providers=["CPUExecutionProvider"]
+    )
+
+    model_state.input_name = model_state.session.get_inputs()[0].name
+
+    model_state.scaler = joblib.load(
+        _APP_CFG["scaler_path"]
+    )
+
+    model_state.feature_names = await asyncio.to_thread(
+        load_feature_names,
+        _APP_CFG["feature_names_path"],
+    )
+
+    print(
+        f"Loaded model '{model_state.model_path}' "
+        f"({len(model_state.feature_names)} features)"
+    )
 
     yield
 
