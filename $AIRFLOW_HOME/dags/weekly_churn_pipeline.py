@@ -41,7 +41,7 @@ in the Airflow UI.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pandas as pd
 from airflow import DAG
@@ -110,7 +110,7 @@ with DAG(
     description="Weekly retrain + export + redeploy of the Telco churn model",
     default_args=default_args,
     schedule="@weekly",  # every Sunday at midnight; use a cron string (e.g. "0 3 * * 1" for Monday 3am) to customize
-    start_date=datetime(2026, 1, 1),
+    start_date=datetime(2026, 1, 1, tzinfo=UTC),
     catchup=False,
     tags=["churn", "ml-pipeline"],
 ) as dag:

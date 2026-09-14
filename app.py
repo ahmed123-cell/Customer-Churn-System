@@ -35,7 +35,7 @@ from __future__ import annotations
 import asyncio
 import json
 from contextlib import asynccontextmanager
-from typing import Literal
+from typing import ClassVar, Literal
 
 import joblib
 import numpy as np
@@ -63,7 +63,7 @@ _APP_CFG = load_app_config()
 class ModelState:
     session: ort.InferenceSession | None = None
     scaler = None
-    feature_names: list[str] = []
+    feature_names: ClassVar[list[str]] = []
     input_name: str = ""
     model_path: str = ""
 

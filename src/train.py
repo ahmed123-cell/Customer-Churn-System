@@ -22,7 +22,7 @@ import argparse
 import logging
 import sys
 import warnings
-from datetime import datetime
+from datetime import UTC, datetime
 
 import mlflow
 import mlflow.lightgbm
@@ -83,7 +83,7 @@ def new_experiment_name(prefix: str) -> str:
     timestamp, so every run of this script gets its own fresh MLflow
     experiment instead of appending runs to a shared/previous one.
     """
-    return f"{prefix}_{datetime.now():%Y%m%d_%H%M%S}"
+    return f"{prefix}_{datetime.now(UTC):%Y%m%d_%H%M%S}"
 
 
 def log_model_to_mlflow(model, artifact_path: str) -> None:
@@ -271,7 +271,7 @@ def main(
             )
         results = pd.DataFrame([row]).set_index("model")
     else:
-        with mlflow.start_run(run_name="all_models") as parent_run:
+        with mlflow.start_run(run_name="all_models"):
             mlflow.log_params(run_params)
             results = train_and_evaluate_all(X_train, y_train, X_test, y_test)
 
