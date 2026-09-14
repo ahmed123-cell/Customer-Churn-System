@@ -30,11 +30,14 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Install Python dependencies first so this layer is cached across code
 # changes (only re-runs when pyproject.toml/uv.lock change).
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Application code and config.
 COPY src/ ./src/
 COPY configs ./configs
+
+# Now install the project itself (fast — deps are already cached above).
+RUN uv sync --frozen --no-dev
 
 # Model artifacts (the .onnx file, scaler.joblib, feature_names.json) are
 # expected to be provided at runtime via a volume mount at /app/artifacts
