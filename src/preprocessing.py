@@ -30,13 +30,10 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Optional
-
-import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 import yaml
-from pathlib import Path
+from sklearn.preprocessing import StandardScaler
+
 
 def load_data_config(path: str = "configs/data_config.yaml") -> dict:
     with open(path) as f:
@@ -110,7 +107,7 @@ def _one_hot_encode(data: pd.DataFrame, known_categories: dict[str, list[str]]) 
 def preprocess_data(
     data: pd.DataFrame,
     target_column: str = TARGET_COLUMN,
-    scaler: Optional[StandardScaler] = None,
+    scaler: StandardScaler | None = None,
     fit_scaler: bool = True,
     return_dataframe: bool = False,
 ):

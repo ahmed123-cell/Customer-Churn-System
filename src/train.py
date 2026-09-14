@@ -24,19 +24,20 @@ import sys
 import warnings
 from datetime import datetime
 
-import numpy as np
-import pandas as pd
 import mlflow
+import mlflow.lightgbm
 import mlflow.sklearn
 import mlflow.xgboost
-import mlflow.lightgbm
+import numpy as np
+import pandas as pd
 import structlog
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_score, recall_score, roc_auc_score
-
-from preprocessing import preprocess_data
-from models_builder import MODEL_BUILDERS
 import yaml
+from sklearn.metrics import precision_score, recall_score, roc_auc_score
+from sklearn.model_selection import train_test_split
+
+from models_builder import MODEL_BUILDERS
+from preprocessing import preprocess_data
+
 
 def load_train_config(path: str = "configs/train_config.yaml") -> dict:
     with open(path) as f:

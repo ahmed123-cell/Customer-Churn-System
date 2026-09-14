@@ -34,14 +34,14 @@ Usage:
 from __future__ import annotations
 
 import numpy as np
-
+import yaml
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
-import yaml
+
 
 def load_model_config(path: str = "configs/model_config.yaml") -> dict:
     with open(path) as f:

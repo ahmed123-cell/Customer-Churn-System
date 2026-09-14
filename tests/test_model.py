@@ -28,16 +28,16 @@ from sklearn.model_selection import train_test_split
 # models_builder.py / preprocessing.py without needing them installed as a package.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from models_builder import (  # noqa: E402
+from models_builder import (
     MODEL_BUILDERS,
-    build_logistic_regression,
-    build_linear_svm,
-    build_decision_tree,
-    build_random_forest,
-    build_gradient_boosting,
-    build_xgboost,
-    build_lightgbm,
     _compute_scale_pos_weight,
+    build_decision_tree,
+    build_gradient_boosting,
+    build_lightgbm,
+    build_linear_svm,
+    build_logistic_regression,
+    build_random_forest,
+    build_xgboost,
 )
 
 DATA_PATH = Path("data\\Telco-Customer-Churn.csv")
@@ -314,6 +314,7 @@ def test_end_to_end_pipeline_on_real_data():
     """
     import pandas as pd
     from sklearn.metrics import roc_auc_score
+
     from preprocessing import preprocess_data
 
     raw = pd.read_csv(DATA_PATH)

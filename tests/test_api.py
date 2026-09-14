@@ -40,8 +40,7 @@ from fastapi.testclient import TestClient
 # where pytest is invoked from, since app.py lives there, not under tests/.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import app as app_module  # noqa: E402  (import after sys.path fix, intentional)
-
+import app as app_module
 
 VALID_CUSTOMER = {
     "gender": "Female",

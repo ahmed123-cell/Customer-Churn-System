@@ -26,7 +26,6 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import Optional
 
 import numpy as np
 import structlog
@@ -231,6 +230,7 @@ def verify_onnx_model(
 
 def _build_arg_parser():
     import argparse
+
     from models_builder import MODEL_BUILDERS
 
     parser = argparse.ArgumentParser(
@@ -296,10 +296,12 @@ def _parse_params(param_list) -> dict:
 
 def main():
     import json
+
     import joblib
     import pandas as pd
-    from preprocessing import preprocess_data
+
     from models_builder import MODEL_BUILDERS
+    from preprocessing import preprocess_data
 
     args = _build_arg_parser().parse_args()
     configure_logging(args.log_level)

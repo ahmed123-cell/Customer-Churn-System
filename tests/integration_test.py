@@ -60,10 +60,10 @@ from sklearn.model_selection import train_test_split
 # without needing them installed as a package.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from preprocessing import preprocess_data  # noqa: E402
-from models_builder import MODEL_BUILDERS  # noqa: E402
-from save_model import save_model_to_onnx, verify_onnx_model  # noqa: E402
-import app as app_module  # noqa: E402
+import app as app_module
+from models_builder import MODEL_BUILDERS
+from preprocessing import preprocess_data
+from save_model import save_model_to_onnx, verify_onnx_model
 
 # NOTE: test_data.py and test_model.py both hardcode this path as the
 # Windows literal Path("data\\Telco-Customer-Churn.csv"), which only

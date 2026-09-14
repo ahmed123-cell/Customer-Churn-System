@@ -51,7 +51,6 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
-
 PROJECT_DIR = Variable.get("churn_project_dir", default_var="/opt/airflow/projects/churn")
 DOCKER_IMAGE = Variable.get("churn_docker_image", default_var="churn-api:latest")
 API_CONTAINER = Variable.get("churn_api_container", default_var="churn-api")
