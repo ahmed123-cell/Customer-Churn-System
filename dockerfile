@@ -33,7 +33,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
 # Application code and config.
-COPY COPY src/ ./src/
+COPY src/ ./src/
 COPY configs ./configs
 
 # Model artifacts (the .onnx file, scaler.joblib, feature_names.json) are
