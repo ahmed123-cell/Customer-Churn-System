@@ -1,0 +1,59 @@
+# configs/data_config.yaml
+#
+# Column-level configuration for the Telco Customer Churn preprocessing
+# pipeline. This mirrors the constants that used to be hardcoded at the top
+# of preprocessing.py, so column layout can be changed without touching code.
+
+# Identifier columns dropped before modeling (no predictive signal).
+id_columns:
+  - customerID
+
+# Target column in the raw dataset.
+target_column: Churn
+
+# Two-category Yes/No-style (and gender) columns mapped to 0/1.
+# Fixed mappings so a single row / partial batch still encodes consistently.
+binary_column_maps:
+  gender:
+    Female: 0
+    Male: 1
+  Partner:
+    "No": 0
+    "Yes": 1
+  Dependents:
+    "No": 0
+    "Yes": 1
+  PhoneService:
+    "No": 0
+    "Yes": 1
+  PaperlessBilling:
+    "No": 0
+    "Yes": 1
+
+# Fixed category lists for multi-category columns (used to lock in a
+# consistent set of one-hot columns regardless of batch size/content).
+known_categories:
+  MultipleLines: ["No", "No phone service", "Yes"]
+  InternetService: ["DSL", "Fiber optic", "No"]
+  OnlineSecurity: ["No", "No internet service", "Yes"]
+  OnlineBackup: ["No", "No internet service", "Yes"]
+  DeviceProtection: ["No", "No internet service", "Yes"]
+  TechSupport: ["No", "No internet service", "Yes"]
+  StreamingTV: ["No", "No internet service", "Yes"]
+  StreamingMovies: ["No", "No internet service", "Yes"]
+  Contract: ["Month-to-month", "One year", "Two year"]
+  PaymentMethod:
+    - "Bank transfer (automatic)"
+    - "Credit card (automatic)"
+    - "Electronic check"
+    - "Mailed check"
+
+# Continuous numeric columns scaled with StandardScaler.
+numeric_columns:
+  - tenure
+  - MonthlyCharges
+  - TotalCharges
+
+# Already-numeric 0/1 columns needing no transformation.
+already_binary_numeric_columns:
+  - SeniorCitizen

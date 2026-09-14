@@ -1,0 +1,12 @@
+# configs/app_config.yaml
+#
+# Configuration for app.py (the FastAPI serving layer). Paths point at the
+# artifacts produced by `python save_model.py --data ... --model ...`:
+# the exported ONNX model, its fitted scaler, and its feature ordering.
+
+model_path: "artifacts/gradient_boosting.onnx"
+scaler_path: "artifacts/scaler.joblib"
+feature_names_path: "artifacts/feature_names.json"
+
+host: "0.0.0.0"
+port: 8000

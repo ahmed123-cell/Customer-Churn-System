@@ -1,0 +1,22 @@
+# configs/train_config.yaml
+#
+# Defaults for the train.py CLI. These replace the hardcoded argparse
+# `default=` values so a run's data path / split / seed can be changed
+# without editing code (CLI flags still override these when passed).
+
+data_path: "data/Telco-Customer-Churn.csv"
+test_size: 0.2
+seed: 42
+
+# Optional: restrict a default (no --model flag) run to a subset of models,
+# instead of always running every entry in MODEL_BUILDERS.
+# Leave empty/omit to run all models registered in models_builder.py.
+models_to_run: []
+
+# MLflow experiment naming. Each run of train.py creates a brand-new
+# experiment named "<mlflow_experiment_prefix>_<timestamp>", so consecutive
+# runs never mix their models/metrics together in the same experiment.
+# Set mlflow_tracking_uri if you're pointing at a remote/shared MLflow
+# server instead of the local ./mlruns folder (leave null for local).
+mlflow_experiment_prefix: "telco_churn"
+mlflow_tracking_uri: null

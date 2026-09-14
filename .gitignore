@@ -1,0 +1,27 @@
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Generated ML artifacts
+artifacts/
+
+# Datasets
+data/
+
+# MLflow
+mlruns/
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/

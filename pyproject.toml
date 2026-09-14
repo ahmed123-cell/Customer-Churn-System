@@ -1,0 +1,40 @@
+[project]
+name = "customer-churn-system"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Ahmed Hazem", email = "ah1302609@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "dvc>=3.67.1",
+    "fastapi>=0.141.1",
+    "great-expectations>=1.22.0",
+    "httpx2>=2.12.0",
+    "joblib>=1.6.0",
+    "lightgbm>=4.7.0",
+    "matplotlib>=3.11.1",
+    "mlflow>=3.16.0",
+    "notebook>=7.6.2",
+    "numpy>=2.5.3",
+    "onnxmltools>=1.16.0",
+    "onnxruntime>=1.30.0",
+    "pandas>=3.0.5",
+    "pydantic>=2.13.5",
+    "pytest>=9.1.1",
+    "python-dotenv>=1.2.3",
+    "scikit-learn>=1.9.0",
+    "seaborn>=0.13.2",
+    "skl2onnx>=1.20.0",
+    "structlog>=26.1.0",
+    "uvicorn>=0.52.4",
+    "xgboost>=3.4.1",
+]
+
+[project.scripts]
+customer-churn-system = "customer_churn_system:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
