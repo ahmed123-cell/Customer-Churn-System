@@ -63,11 +63,20 @@ def configure_logging(level: str = "INFO") -> None:
 log = structlog.get_logger("save_model")
 
 
-def _initial_type(n_features: int):
+def _initial_type(n_features: int, backend: str = "skl2onnx"):
     """Build the ONNX input signature: a float32 tensor of shape
     (batch_size, n_features), with batch_size left dynamic (`None`).
+
+    IMPORTANT: skl2onnx and onnxmltools each define their own
+    FloatTensorType class. They look identical but aren't interchangeable —
+    passing skl2onnx's version to onnxmltools' convert_xgboost/
+    convert_lightgbm raises a RuntimeError ("wrong type") deep inside
+    onnxmltools' shape-inference step. `backend` picks the matching one.
     """
-    from skl2onnx.common.data_types import FloatTensorType
+    if backend == "onnxmltools":
+        from onnxmltools.convert.common.data_types import FloatTensorType
+    else:
+        from skl2onnx.common.data_types import FloatTensorType
 
     return [("input", FloatTensorType([None, n_features]))]
 
@@ -97,17 +106,18 @@ def _convert_to_onnx(model, n_features: int, zipmap: bool = False):
         ONNX Runtime in most non-Python contexts. Ignored for XGBoost/
         LightGBM, which don't use ZipMap in onnxmltools.
     """
-    initial_type = _initial_type(n_features)
     module_name = type(model).__module__
 
     if module_name.startswith("xgboost"):
         from onnxmltools import convert_xgboost
 
+        initial_type = _initial_type(n_features, backend="onnxmltools")
         return convert_xgboost(model, initial_types=initial_type)
 
     if module_name.startswith("lightgbm"):
         from onnxmltools import convert_lightgbm
 
+        initial_type = _initial_type(n_features, backend="onnxmltools")
         return convert_lightgbm(model, initial_types=initial_type)
 
     # Default: any scikit-learn-compatible estimator (LogisticRegression,
@@ -115,6 +125,7 @@ def _convert_to_onnx(model, n_features: int, zipmap: bool = False):
     # GradientBoostingClassifier, etc.)
     from skl2onnx import convert_sklearn
 
+    initial_type = _initial_type(n_features, backend="skl2onnx")
     options = {id(model): {"zipmap": False}} if not zipmap else None
     return convert_sklearn(model, initial_types=initial_type, options=options)
 

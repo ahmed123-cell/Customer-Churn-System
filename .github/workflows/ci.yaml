@@ -1,0 +1,86 @@
+# .github/workflows/ci.yaml
+#
+# CI for the Telco Customer Churn project. Runs on every push/PR to main:
+#   1. Install deps with uv (using the committed uv.lock for reproducible
+#      installs — same tool as the Dockerfile).
+#   2. Lint + format-check with ruff.
+#   3. Run the pytest suite with coverage.
+#   4. Build the Docker image (build only, no push) to catch a broken
+#      Dockerfile before it reaches main.
+#
+# Assumes: pyproject.toml + uv.lock at the repo root, and dev/test tools
+# (pytest, httpx, ruff, pytest-cov) declared as a dev dependency group in
+# pyproject.toml. Adjust the `uv sync` flag below if yours are named
+# differently (e.g. `--extra test` instead of a dev group).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Lint & test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --frozen --all-groups
+
+      - name: Lint with ruff
+        run: uv run ruff check .
+
+      - name: Check formatting with ruff
+        run: uv run ruff format --check .
+
+      - name: Run tests
+        run: uv run pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+  docker-build:
+    name: Validate Docker build
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: churn-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
