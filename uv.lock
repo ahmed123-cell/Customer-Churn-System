@@ -1131,6 +1131,11 @@ dependencies = [
     { name = "xgboost" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "apache-airflow", specifier = ">=3.2.2" },
@@ -1160,7 +1165,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = []
+dev = [{ name = "ruff", specifier = ">=0.16.7" }]
 
 [[package]]
 name = "cycler"
