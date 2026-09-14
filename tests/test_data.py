@@ -23,7 +23,7 @@ import pytest
 # Fixtures
 # ---------------------------------------------------------------------------
 
-DATA_PATH = Path("data\\Telco-Customer-Churn.csv")
+DATA_PATH = Path("data") / "Telco-Customer-Churn.csv"
 
 EXPECTED_COLUMNS = [
     "customerID",
