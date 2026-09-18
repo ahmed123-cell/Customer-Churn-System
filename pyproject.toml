@@ -1,7 +1,7 @@
 [project]
 name = "customer-churn-system"
 version = "0.1.0"
-description = "Add your description here"
+description = "End-to-end Machine Learning pipeline to predict Telco customer churn, including model training, ONNX export, and a FastAPI serving layer."
 readme = "README.md"
 authors = [
     { name = "Ahmed Hazem", email = "ah1302609@gmail.com" }
