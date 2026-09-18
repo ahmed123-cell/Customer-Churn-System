@@ -2,8 +2,9 @@
 
 This project is an end-to-end Machine Learning pipeline designed to predict customer churn based on various account and service attributes. It covers the entire lifecycle from data preprocessing and model training to containerized model serving via a REST API.
 
+### 🎬 Project Explainer
 <p align="center">
-  <img src="images/Designer.png" alt="Architecture" width="1000">
+  <video src="media/ChurnProjectExplainer.mp4" width="100%" autoplay loop muted playsinline controls></video>
 </p>
 
 ## 🚀 Features
