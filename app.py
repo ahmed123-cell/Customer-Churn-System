@@ -68,6 +68,7 @@ class ModelState:
     feature_names: ClassVar[list[str]] = []
     input_name: str = ""
     model_path: str = ""
+    ui_html: str | None = None
 
 
 model_state = ModelState()
@@ -76,6 +77,14 @@ model_state = ModelState()
 def load_feature_names(path):
     with open(path) as f:
         return json.load(f)
+
+
+def load_ui_html(path: str = "UI.html") -> str | None:
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return None
 
 
 @asynccontextmanager
@@ -98,6 +107,8 @@ async def lifespan(app: FastAPI):
         load_feature_names,
         _APP_CFG["feature_names_path"],
     )
+
+    model_state.ui_html = await asyncio.to_thread(load_ui_html)
 
     print(
         f"Loaded model '{model_state.model_path}' "
@@ -206,6 +217,7 @@ class PredictionResponse(BaseModel):
 
 class BatchPredictionResponse(BaseModel):
     """Model output for a batch of customers."""
+
     predictions: list[PredictionResponse]
 
 
@@ -253,7 +265,7 @@ def _run_batch_inference(df_batch: pd.DataFrame) -> list[tuple[int, float]]:
     # with zipmap=False (save_model.py's default), or a list of
     # {class: prob} dicts if exported with zipmap=True — handle both.
     proba_output = outputs[1]
-    
+
     results = []
     for i, label in enumerate(labels):
         if isinstance(proba_output, list):
@@ -271,14 +283,15 @@ from fastapi.responses import HTMLResponse
 # Routes
 # ---------------------------------------------------------------------------
 
+
 @app.get("/", response_class=HTMLResponse, tags=["UI"])
 async def serve_ui():
-    """Serves the frontend UI."""
-    try:
-        with open("UI.html", "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
+    """Serves the frontend UI, loaded once at startup (see `lifespan`) and
+    held in `model_state` — this handler never touches the filesystem.
+    """
+    if model_state.ui_html is None:
         return "UI.html not found. Please ensure it is in the root directory."
+    return model_state.ui_html
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
