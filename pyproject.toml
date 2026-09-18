@@ -33,6 +33,7 @@ dependencies = [
     "uvicorn>=0.52.4",
     "xgboost>=3.4.1",
     "ruff>=0.16.7",
+    "websockets>=14",
 ]
 
 [project.scripts]

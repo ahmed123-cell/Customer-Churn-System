@@ -1212,6 +1212,7 @@ dependencies = [
     { name = "skl2onnx" },
     { name = "structlog" },
     { name = "uvicorn" },
+    { name = "websockets" },
     { name = "xgboost" },
 ]
 
@@ -1248,6 +1249,7 @@ requires-dist = [
     { name = "skl2onnx", specifier = ">=1.20.0" },
     { name = "structlog", specifier = ">=26.1.0" },
     { name = "uvicorn", specifier = ">=0.52.4" },
+    { name = "websockets", specifier = ">=14" },
     { name = "xgboost", specifier = ">=3.4.1" },
 ]
 

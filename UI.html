@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Churn Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --white: #ffffff;
+    --black: #14151a;
+    --blue: #3e8ede;
+    --blue-pale: #eaf3fc;
+    --blue-mid: #bcdcf6;
+    --blue-dark: #256bb0;
+    --line: rgba(20, 21, 26, 0.1);
+    --line-soft: rgba(20, 21, 26, 0.06);
+    --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--white);
+    color: var(--black);
+    font-family: var(--font-body);
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 56px 20px 80px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  .page {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  /* ---------- Header ---------- */
+
+  header {
+    margin-bottom: 40px;
+  }
+
+  .eyebrow-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--blue);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .mark::before, .mark::after {
+    content: "";
+    position: absolute;
+    background: var(--white);
+    border-radius: 2px;
+  }
+
+  .mark::before {
+    width: 14px;
+    height: 3px;
+    top: 12px;
+    left: 10px;
+    transform: rotate(-40deg);
+  }
+
+  .mark::after {
+    width: 9px;
+    height: 3px;
+    top: 18px;
+    left: 19px;
+    transform: rotate(40deg);
+  }
+
+  .service-name {
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--black);
+    opacity: 0.55;
+  }
+
+  h1 {
+    font-size: 32px;
+    line-height: 1.15;
+    font-weight: 700;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--black);
+    opacity: 0.62;
+    margin: 0;
+    max-width: 52ch;
+  }
+
+  /* ---------- Connection strip ---------- */
+
+  .connection {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+    padding: 10px 14px;
+    background: var(--blue-pale);
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .connection input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--black);
+    outline: none;
+    min-width: 0;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--black);
+    opacity: 0.25;
+    flex-shrink: 0;
+    transition: background 0.25s ease, opacity 0.25s ease;
+  }
+
+  .status-dot.up { background: var(--blue); opacity: 1; }
+  .status-dot.down { background: var(--black); opacity: 0.85; }
+
+  .connection .recheck {
+    border: none;
+    background: none;
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--blue-dark);
+    cursor: pointer;
+    padding: 2px 4px;
+    flex-shrink: 0;
+  }
+
+  .connection .recheck:hover { text-decoration: underline; }
+
+  /* ---------- Form structure ---------- */
+
+  form { margin-top: 40px; }
+
+  .section {
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+
+  .section:first-child { border-top: none; padding-top: 0; }
+
+  .section + .section { margin-top: 28px; }
+
+  .section h2 {
+    font-size: 12.5px;
+    font-weight: 600;
+    margin: 0 0 18px;
+    color: var(--black);
+    opacity: 0.5;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 14px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+
+  .field label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--black);
+    opacity: 0.75;
+  }
+
+  .field .hint {
+    font-size: 11.5px;
+    color: var(--black);
+    opacity: 0.42;
+    margin-top: -3px;
+  }
+
+  select, input[type="number"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--white);
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--black);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%2314151a' fill-opacity='0.45'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 30px;
+  }
+
+  select:focus, input[type="number"]:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px var(--blue-pale);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button {
+    opacity: 0.5;
+  }
+
+  .toggle-pair {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+
+  .toggle-pair button {
+    flex: 1;
+    padding: 10px 8px;
+    border: none;
+    background: var(--white);
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--black);
+    opacity: 0.55;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  }
+
+  .toggle-pair button + button { border-left: 1px solid var(--line); }
+
+  .toggle-pair button.active {
+    background: var(--blue);
+    color: var(--white);
+    opacity: 1;
+  }
+
+  .toggle-pair button:not(.active):hover { opacity: 0.85; background: var(--blue-pale); }
+
+  /* ---------- Submit ---------- */
+
+  .submit-row {
+    margin-top: 36px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  button.submit {
+    appearance: none;
+    border: none;
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 13px 26px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+
+  button.submit:hover { background: var(--blue-dark); }
+  button.submit:active { transform: scale(0.98); }
+  button.submit:disabled { opacity: 0.5; cursor: default; transform: none; background: var(--black); }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-top-color: var(--white);
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  button.submit.loading .spinner { display: inline-block; }
+  button.submit.loading .btn-text { opacity: 0.85; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-text {
+    font-size: 13px;
+    color: var(--black);
+    max-width: 40ch;
+    line-height: 1.5;
+  }
+
+  /* ---------- Result ---------- */
+
+  .result {
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    opacity: 0;
+    transform: translateY(10px);
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .result.visible {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 600px;
+  }
+
+  .result-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 18px;
+    gap: 16px;
+  }
+
+  .result-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    opacity: 0.5;
+    margin-bottom: 8px;
+  }
+
+  .result-verdict {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .result-verdict.stay { color: var(--blue-dark); }
+  .result-verdict.churn { color: var(--black); }
+
+  .result-figure {
+    text-align: right;
+  }
+
+  .result-figure .value {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 500;
+  }
+
+  .result-figure .figure-label {
+    font-size: 11.5px;
+    opacity: 0.5;
+    margin-top: 2px;
+  }
+
+  .bar-track {
+    width: 100%;
+    height: 10px;
+    background: var(--blue-pale);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 6px;
+    background: var(--blue);
+    transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease;
+  }
+
+  .bar-fill.high-risk { background: var(--black); }
+
+  .bar-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    opacity: 0.4;
+    margin-top: 6px;
+  }
+
+  .result-meta {
+    margin-top: 20px;
+    font-size: 12.5px;
+    font-family: var(--font-mono);
+    color: var(--black);
+    opacity: 0.4;
+  }
+
+  footer {
+    margin-top: 56px;
+    font-size: 12px;
+    color: var(--black);
+    opacity: 0.35;
+    text-align: center;
+  }
+
+  @media (max-width: 520px) {
+    .grid { grid-template-columns: 1fr; }
+    h1 { font-size: 27px; }
+    body { padding: 40px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow-row">
+      <div class="mark"></div>
+      <span class="service-name">Telco Customer Churn API</span>
+    </div>
+    <h1>Will this customer churn?</h1>
+    <p>Enter one customer's account and service details below. The model returns a prediction and how confident it is, calculated by the classifier running behind this form.</p>
+  </header>
+
+  <div class="connection">
+    <span class="status-dot" id="statusDot"></span>
+    <input id="apiBase" type="text" value="http://localhost:8000" spellcheck="false" aria-label="API base URL">
+    <button type="button" class="recheck" id="recheckBtn">Check</button>
+  </div>
+
+  <form id="churnForm">
+
+    <div class="section">
+      <h2>Customer profile</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="gender">Gender</label>
+          <select id="gender" name="gender">
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Senior citizen</label>
+          <div class="toggle-pair" data-field="SeniorCitizen" data-type="int">
+            <button type="button" data-value="0" class="active">No</button>
+            <button type="button" data-value="1">Yes</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Has a partner</label>
+          <div class="toggle-pair" data-field="Partner">
+            <button type="button" data-value="Yes">Yes</button>
+            <button type="button" data-value="No" class="active">No</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Has dependents</label>
+          <div class="toggle-pair" data-field="Dependents">
+            <button type="button" data-value="Yes">Yes</button>
+            <button type="button" data-value="No" class="active">No</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="tenure">Tenure (months)</label>
+          <input id="tenure" type="number" min="0" max="100" value="12">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Services</h2>
+      <div class="grid">
+        <div class="field">
+          <label>Phone service</label>
+          <div class="toggle-pair" data-field="PhoneService">
+            <button type="button" data-value="Yes" class="active">Yes</button>
+            <button type="button" data-value="No">No</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="MultipleLines">Multiple lines</label>
+          <select id="MultipleLines">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+            <option value="No phone service">No phone service</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="InternetService">Internet service</label>
+          <select id="InternetService">
+            <option value="Fiber optic" selected>Fiber optic</option>
+            <option value="DSL">DSL</option>
+            <option value="No">No internet service</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="OnlineSecurity">Online security</label>
+          <select id="OnlineSecurity" class="service-option">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+            <option value="No internet service">No internet service</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="OnlineBackup">Online backup</label>
+          <select id="OnlineBackup" class="service-option">
+            <option value="Yes" selected>Yes</option>
+            <option value="No">No</option>
+            <option value="No internet service">No internet service</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="DeviceProtection">Device protection</label>
+          <select id="DeviceProtection" class="service-option">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+            <option value="No internet service">No internet service</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="TechSupport">Tech support</label>
+          <select id="TechSupport" class="service-option">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+            <option value="No internet service">No internet service</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="StreamingTV">Streaming TV</label>
+          <select id="StreamingTV" class="service-option">
+            <option value="Yes" selected>Yes</option>
+            <option value="No">No</option>
+            <option value="No internet service">No internet service</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="StreamingMovies">Streaming movies</label>
+          <select id="StreamingMovies" class="service-option">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+            <option value="No internet service">No internet service</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Billing</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="Contract">Contract</label>
+          <select id="Contract">
+            <option value="Month-to-month" selected>Month-to-month</option>
+            <option value="One year">One year</option>
+            <option value="Two year">Two year</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Paperless billing</label>
+          <div class="toggle-pair" data-field="PaperlessBilling">
+            <button type="button" data-value="Yes" class="active">Yes</button>
+            <button type="button" data-value="No">No</button>
+          </div>
+        </div>
+        <div class="field full">
+          <label for="PaymentMethod">Payment method</label>
+          <select id="PaymentMethod">
+            <option value="Electronic check" selected>Electronic check</option>
+            <option value="Mailed check">Mailed check</option>
+            <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+            <option value="Credit card (automatic)">Credit card (automatic)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="MonthlyCharges">Monthly charges ($)</label>
+          <input id="MonthlyCharges" type="number" min="0" step="0.01" value="70.35">
+        </div>
+        <div class="field">
+          <label for="TotalCharges">Total charges to date ($)</label>
+          <input id="TotalCharges" type="number" min="0" step="0.01" value="845.50">
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-row">
+      <button type="submit" class="submit" id="submitBtn">
+        <span class="spinner"></span>
+        <span class="btn-text">Predict churn</span>
+      </button>
+      <span class="error-text" id="errorText"></span>
+    </div>
+  </form>
+
+  <div class="result" id="result">
+    <div class="result-top">
+      <div>
+        <div class="result-label">Prediction</div>
+        <div class="result-verdict" id="verdictText">—</div>
+      </div>
+      <div class="result-figure">
+        <div class="value" id="probValue">0%</div>
+        <div class="figure-label">churn probability</div>
+      </div>
+    </div>
+    <div class="bar-track">
+      <div class="bar-fill" id="barFill"></div>
+    </div>
+    <div class="bar-scale"><span>0%</span><span>50%</span><span>100%</span></div>
+    <div class="result-meta" id="resultMeta"></div>
+  </div>
+
+  <footer>Predictions are generated by the model served at the API above and are not a guarantee of outcome.</footer>
+
+</div>
+
+<script>
+  // ---------- Toggle-pair handling ----------
+  document.querySelectorAll('.toggle-pair').forEach(pair => {
+    pair.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      pair.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  function toggleValue(fieldName, asInt) {
+    const pair = document.querySelector(`.toggle-pair[data-field="${fieldName}"]`);
+    const active = pair.querySelector('button.active');
+    const v = active.getAttribute('data-value');
+    return asInt ? parseInt(v, 10) : v;
+  }
+
+  // ---------- API base + health ----------
+  const apiBaseInput = document.getElementById('apiBase');
+  const statusDot = document.getElementById('statusDot');
+  const recheckBtn = document.getElementById('recheckBtn');
+
+  function apiBase() {
+    return apiBaseInput.value.trim().replace(/\/+$/, '');
+  }
+
+  async function checkHealth() {
+    statusDot.className = 'status-dot';
+    try {
+      const res = await fetch(`${apiBase()}/health`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      statusDot.className = 'status-dot ' + (data.model_loaded ? 'up' : 'down');
+    } catch (err) {
+      statusDot.className = 'status-dot down';
+    }
+  }
+
+  recheckBtn.addEventListener('click', checkHealth);
+  window.addEventListener('load', checkHealth);
+
+  // ---------- Form submit ----------
+  const form = document.getElementById('churnForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const errorText = document.getElementById('errorText');
+  const resultBox = document.getElementById('result');
+  const verdictText = document.getElementById('verdictText');
+  const probValue = document.getElementById('probValue');
+  const barFill = document.getElementById('barFill');
+  const resultMeta = document.getElementById('resultMeta');
+
+  function buildPayload() {
+    return {
+      gender: document.getElementById('gender').value,
+      SeniorCitizen: toggleValue('SeniorCitizen', true),
+      Partner: toggleValue('Partner'),
+      Dependents: toggleValue('Dependents'),
+      tenure: parseInt(document.getElementById('tenure').value, 10),
+      PhoneService: toggleValue('PhoneService'),
+      MultipleLines: document.getElementById('MultipleLines').value,
+      InternetService: document.getElementById('InternetService').value,
+      OnlineSecurity: document.getElementById('OnlineSecurity').value,
+      OnlineBackup: document.getElementById('OnlineBackup').value,
+      DeviceProtection: document.getElementById('DeviceProtection').value,
+      TechSupport: document.getElementById('TechSupport').value,
+      StreamingTV: document.getElementById('StreamingTV').value,
+      StreamingMovies: document.getElementById('StreamingMovies').value,
+      Contract: document.getElementById('Contract').value,
+      PaperlessBilling: toggleValue('PaperlessBilling'),
+      PaymentMethod: document.getElementById('PaymentMethod').value,
+      MonthlyCharges: parseFloat(document.getElementById('MonthlyCharges').value),
+      TotalCharges: parseFloat(document.getElementById('TotalCharges').value),
+    };
+  }
+
+  function setLoading(isLoading) {
+    submitBtn.disabled = isLoading;
+    submitBtn.classList.toggle('loading', isLoading);
+  }
+
+  function showResult(prediction, probability, modelPath) {
+    const pct = Math.round(probability * 1000) / 10;
+    const willChurn = prediction === 1;
+
+    verdictText.textContent = willChurn ? 'Likely to churn' : 'Likely to stay';
+    verdictText.className = 'result-verdict ' + (willChurn ? 'churn' : 'stay');
+    probValue.textContent = pct + '%';
+    resultMeta.textContent = 'served from ' + modelPath;
+
+    resultBox.classList.add('visible');
+    barFill.classList.toggle('high-risk', willChurn);
+    barFill.style.width = '0%';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { barFill.style.width = pct + '%'; });
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorText.textContent = '';
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${apiBase()}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPayload()),
+      });
+
+      if (!res.ok) {
+        let message = `Request failed (${res.status}).`;
+        try {
+          const body = await res.json();
+          if (typeof body.detail === 'string') {
+            message = body.detail;
+          } else if (Array.isArray(body.detail)) {
+            const first = body.detail[0];
+            message = `${first.loc?.slice(-1)[0] ?? 'Field'}: ${first.msg}`;
+          }
+        } catch (_) { /* ignore parse errors, keep default message */ }
+        throw new Error(message);
+      }
+
+      const data = await res.json();
+      showResult(data.churn_prediction, data.churn_probability, data.model_path);
+      statusDot.className = 'status-dot up';
+    } catch (err) {
+      errorText.textContent = err.message || 'Could not reach the API. Check the URL above and that the server is running.';
+      statusDot.className = 'status-dot down';
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>
+</body>
+</html>

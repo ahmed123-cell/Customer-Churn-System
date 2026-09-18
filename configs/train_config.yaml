@@ -19,4 +19,4 @@ models_to_run: []
 # Set mlflow_tracking_uri if you're pointing at a remote/shared MLflow
 # server instead of the local ./mlruns folder (leave null for local).
 mlflow_experiment_prefix: "telco_churn"
-mlflow_tracking_uri: null
+mlflow_tracking_uri: "sqlite:///mlflow.db"
