@@ -47,7 +47,7 @@ This project is an end-to-end Machine Learning pipeline designed to predict cust
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/ahmed123-cell/Customer-Churn-System
    cd "Customer Churn System"
    ```
 
