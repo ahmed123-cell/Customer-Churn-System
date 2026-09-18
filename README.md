@@ -132,3 +132,9 @@ docker run -p 8000:8000 -v "$(pwd)/artifacts:/app/artifacts" churn-api
 # On Windows (PowerShell)
 docker run -p 8000:8000 -v "${PWD}/artifacts:/app/artifacts" churn-api
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
