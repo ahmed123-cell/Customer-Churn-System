@@ -204,6 +204,11 @@ class PredictionResponse(BaseModel):
     model_path: str
 
 
+class BatchPredictionResponse(BaseModel):
+    """Model output for a batch of customers."""
+    predictions: list[PredictionResponse]
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok", "unavailable"]
     model_loaded: bool
@@ -216,9 +221,9 @@ class HealthResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-def _run_inference(df_row: pd.DataFrame) -> tuple[int, float]:
-    """Preprocess one row with the already-fitted scaler/feature layout,
-    run it through the ONNX session, and return (predicted_label,
+def _run_batch_inference(df_batch: pd.DataFrame) -> list[tuple[int, float]]:
+    """Preprocess a batch of rows with the already-fitted scaler/feature layout,
+    run it through the ONNX session, and return a list of (predicted_label,
     churn_probability).
 
     This is synchronous and CPU-bound (both the pandas preprocessing and
@@ -227,7 +232,7 @@ def _run_inference(df_row: pd.DataFrame) -> tuple[int, float]:
     awaiting it directly.
     """
     X, _, _, feature_names = preprocess_data(
-        df_row, scaler=model_state.scaler, fit_scaler=False
+        df_batch, scaler=model_state.scaler, fit_scaler=False
     )
 
     if feature_names != model_state.feature_names:
@@ -242,23 +247,38 @@ def _run_inference(df_row: pd.DataFrame) -> tuple[int, float]:
     X = np.asarray(X, dtype=np.float32)
     outputs = model_state.session.run(None, {model_state.input_name: X})
 
-    label = int(np.asarray(outputs[0]).reshape(-1)[0])
+    labels = np.asarray(outputs[0]).reshape(-1)
 
     # outputs[1] is a plain probability tensor if the model was exported
     # with zipmap=False (save_model.py's default), or a list of
     # {class: prob} dicts if exported with zipmap=True — handle both.
     proba_output = outputs[1]
-    if isinstance(proba_output, list):
-        probability = float(proba_output[0][1])
-    else:
-        probability = float(np.asarray(proba_output).reshape(-1, 2)[0][1])
+    
+    results = []
+    for i, label in enumerate(labels):
+        if isinstance(proba_output, list):
+            probability = float(proba_output[i][1])
+        else:
+            probability = float(np.asarray(proba_output).reshape(-1, 2)[i][1])
+        results.append((int(label), probability))
 
-    return label, probability
+    return results
 
+
+from fastapi.responses import HTMLResponse
 
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
+
+@app.get("/", response_class=HTMLResponse, tags=["UI"])
+async def serve_ui():
+    """Serves the frontend UI."""
+    try:
+        with open("UI.html", "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return "UI.html not found. Please ensure it is in the root directory."
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
@@ -285,13 +305,35 @@ async def predict(customer: CustomerData) -> PredictionResponse:
         raise HTTPException(status_code=503, detail="Model is not loaded yet.")
 
     df_row = pd.DataFrame([customer.model_dump()])
-    label, probability = await asyncio.to_thread(_run_inference, df_row)
+    results = await asyncio.to_thread(_run_batch_inference, df_row)
+    label, probability = results[0]
 
     return PredictionResponse(
         churn_prediction=label,
         churn_probability=round(probability, 4),
         model_path=model_state.model_path,
     )
+
+
+@app.post("/predict_batch", response_model=BatchPredictionResponse, tags=["Prediction"])
+async def predict_batch(customers: list[CustomerData]) -> BatchPredictionResponse:
+    """Predict churn for a batch of customers."""
+    if model_state.session is None:
+        raise HTTPException(status_code=503, detail="Model is not loaded yet.")
+
+    df_batch = pd.DataFrame([c.model_dump() for c in customers])
+    results = await asyncio.to_thread(_run_batch_inference, df_batch)
+
+    predictions = [
+        PredictionResponse(
+            churn_prediction=label,
+            churn_probability=round(prob, 4),
+            model_path=model_state.model_path,
+        )
+        for label, prob in results
+    ]
+
+    return BatchPredictionResponse(predictions=predictions)
 
 
 if __name__ == "__main__":

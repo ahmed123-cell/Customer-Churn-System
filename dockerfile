@@ -33,6 +33,7 @@ COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # Application code and config.
+COPY UI.html ./
 COPY src/ ./src/
 COPY configs ./configs
 
@@ -54,5 +55,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # `uv run` executes inside the .venv uv created during `uv sync`, so
-# uvicorn is found without needing it (or the venv) on PATH separately.
-CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# gunicorn is found without needing it (or the venv) on PATH separately.
+CMD ["uv", "run", "gunicorn", "app:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
