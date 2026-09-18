@@ -86,6 +86,8 @@ uv run uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 Once running, interactive API documentation is available at: [http://localhost:8000/docs](http://localhost:8000/docs)
 
+And you can see the interface by opening the `UI.html`
+
 ### 4. Running Tests
 Run the test suite with coverage reporting:
 ```bash
